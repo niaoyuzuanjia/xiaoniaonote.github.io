@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小鸟便签</title>
+    <style>
+        :root {
+            --bg-color: #fff;
+            --text-color: #333;
+            --sidebar-width: 250px;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1e1e1e;
+            --text-color: #e1e1e1;
+			 --toolbar-bg: #2d2d2d;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-color);
+            border-right: 1px solid #ddd;
+            padding: 20px;
+            box-sizing: border-box;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 0;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.sidebar-open {
+            margin-left: var(--sidebar-width);
+        }
+
+        .menu-btn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+        }
+
+        .editor {
+            padding: 20px;
+            min-height: calc(100vh - 120px);
+        }
+
+        .toolbar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: var(--bg-color);
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 60px;
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .settings {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .settings label {
+            display: block;
+            margin: 10px 0;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            min-height: 300px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: none;
+            outline: none;
+            resize: none;
+            font-size: 16px;
+            line-height: 1.6;
+            padding: 10px;
+        }
+
+        .preview {
+            display: none;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .preview.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="menu">
+                <button onclick="newNote()">新建便签</button>
+                <button onclick="loadNote()">读取便签</button>
+                <button onclick="exportNote()">导出便签</button>
+            </div>
+
+            <div class="settings">
+                <label>
+                    用户名：
+                    <input type="text" id="username" onchange="updateUsername()">
+                </label>
+                <label>
+                    深色模式：
+                    <input type="checkbox" id="darkMode" onchange="toggleDarkMode()">
+                </label>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+            
+            <div class="editor">
+                <textarea id="noteEditor"></textarea>
+                <div id="preview" class="preview"></div>
+            </div>
+
+            <div class="toolbar">
+                <button onclick="toggleMarkdown()">Markdown</button>
+                <label>
+                    字体大小：
+                    <input type="number" id="fontSize" min="12" max="36" value="16" onchange="changeFontSize()">
+                </label>
+            </div>
+
+            <div class="footer">
+                &copy; 2025 小鸟软件. 保留所有权利。
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        // 初始化状态
+        let isMarkdown = false;
+        let currentNote = null;
+        const notes = [];
+        let isDarkMode = localStorage.getItem('darkMode') === 'true';
+
+        // 初始化UI
+        function initUI() {
+            // 设置深色模式
+            document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+            document.getElementById('darkMode').checked = isDarkMode;
+
+            // 设置用户名
+            const username = localStorage.getItem('username') || '用户';
+            document.getElementById('username').value = username;
+
+            // 设置字体大小
+            const fontSize = localStorage.getItem('fontSize') || '16';
+            document.getElementById('fontSize').value = fontSize;
+            document.getElementById('noteEditor').style.fontSize = `${fontSize}px`;
+        }
+
+        // 切换侧边栏
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            sidebar.classList.toggle('open');
+            mainContent.classList.toggle('sidebar-open');
+        }
+
+        // 新建便签
+        function newNote() {
+            const note = {
+                id: Date.now(),
+                content: '',
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+            notes.push(note);
+            currentNote = note;
+            document.getElementById('noteEditor').value = '';
+            document.getElementById('preview').innerHTML = '';
+            toggleSidebar();
+        }
+
+        // 读取便签
+        function loadNote() {
+            // 实现读取逻辑
+            console.log('读取便签');
+            toggleSidebar();
+        }
+
+        // 导出便签
+        function exportNote() {
+            const content = document.getElementById('noteEditor').value;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `note_${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            toggleSidebar();
+        }
+
+        // 更新用户名
+        function updateUsername() {
+            const username = document.getElementById('username').value;
+            localStorage.setItem('username', username);
+        }
+
+        // 切换深色模式
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+            localStorage.setItem('darkMode', isDarkMode);
+        }
+
+        // 切换Markdown模式
+        function toggleMarkdown() {
+            isMarkdown = !isMarkdown;
+            const editor = document.getElementById('noteEditor');
+            const preview = document.getElementById('preview');
+            
+            if (isMarkdown) {
+                editor.style.display = 'none';
+                preview.classList.add('active');
+                updatePreview();
+            } else {
+                editor.style.display = 'block';
+                preview.classList.remove('active');
+            }
+        }
+
+        // 更新Markdown预览
+        function updatePreview() {
+            if (isMarkdown) {
+                const content = document.getElementById('noteEditor').value;
+                document.getElementById('preview').innerHTML = marked.parse(content);
+            }
+        }
+
+        // 改变字体大小
+        function changeFontSize() {
+            const size = document.getElementById('fontSize').value;
+            document.getElementById('noteEditor').style.fontSize = `${size}px`;
+            localStorage.setItem('fontSize', size);
+        }
+
+        // 初始化
+        document.getElementById('noteEditor').addEventListener('input', updatePreview);
+        initUI();
+    </script>
+</body>
+</html>
