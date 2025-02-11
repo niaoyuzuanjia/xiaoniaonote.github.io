@@ -1,0 +1,10 @@
+/* 添加过渡动画 */
+#editor, .markdown-preview {
+    transition: all 0.3s ease;
+}
+
+/* 改进预览样式 */
+.markdown-preview h1 {
+    font-size: 1.8em;
+    border-bottom: 2px solid var(--text-color);
+}
